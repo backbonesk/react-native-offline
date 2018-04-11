@@ -9,6 +9,7 @@ import reactConnectionStore from './reactConnectionStore';
 type DefaultProps = {
   timeout?: number,
   pingServerUrl?: string,
+  pingServerMethod?: string,
   withExtraHeadRequest?: boolean,
 };
 
@@ -25,12 +26,14 @@ class ConnectivityRenderer extends Component<DefaultProps, Props, State> {
     children: PropTypes.func.isRequired,
     timeout: PropTypes.number,
     pingServerUrl: PropTypes.string,
+    pingServerMethod: PropTypes.string,
     withExtraHeadRequest: PropTypes.bool,
   };
 
   static defaultProps: DefaultProps = {
     timeout: 3000,
     pingServerUrl: 'https://google.com',
+    pingServerMethod: 'HEAD',
     withExtraHeadRequest: true,
   };
 
@@ -47,6 +50,9 @@ class ConnectivityRenderer extends Component<DefaultProps, Props, State> {
     }
     if (typeof this.props.pingServerUrl !== 'string') {
       throw new Error('you should pass a string as pingServerUrl prop');
+    }
+    if (typeof this.props.pingServerMethod !== 'string') {
+      throw new Error('you should pass a string as pingServerMethod prop');
     }
   }
 
@@ -80,10 +86,11 @@ class ConnectivityRenderer extends Component<DefaultProps, Props, State> {
 
   checkInternet = (isConnected: boolean) => {
     if (isConnected) {
-      checkInternetAccess(
-        this.props.timeout,
-        this.props.pingServerUrl,
-      ).then((hasInternetAccess: boolean) => {
+      checkInternetAccess({
+        method: this.props.pingServerMethod,
+        timeout: this.props.timeout,
+        url: this.props.pingServerUrl,
+      }).then((hasInternetAccess: boolean) => {
         this.handleConnectivityChange(hasInternetAccess);
       });
     } else {

@@ -1,6 +1,6 @@
 /* @flow */
 
-type Options = {
+export type Options = {
   method?: string,
   url: string,
   params?:
@@ -71,6 +71,6 @@ export default function makeHttpRequest(
         )
         .join('&');
     }
-    xhr.send(params);
+    xhr.send(requestParams);
   });
 }

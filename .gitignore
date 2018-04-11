@@ -11,3 +11,5 @@ coverage/
 
 #IntelliJ
 .idea
+
+yarn-error.log

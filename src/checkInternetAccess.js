@@ -1,15 +1,17 @@
 /* @flow */
 import makeHttpRequest from './makeHttpRequest';
+import type { Options } from './makeHttpRequest';
 
-export default function checkInternetAccess(
-  timeout: number = 3000,
-  url: string = 'https://google.com',
-): Promise<boolean> {
+export default function checkInternetAccess({
+  method = 'HEAD',
+  timeout = 3000,
+  url = 'https://google.com',
+}: Options): Promise<boolean> {
   return new Promise((resolve: (value: boolean) => void) => {
     makeHttpRequest({
-      method: 'HEAD',
-      url,
+      method,
       timeout,
+      url,
     })
       .then(() => {
         resolve(true);

@@ -16,6 +16,7 @@ type Arguments = {
   withRedux?: boolean,
   timeout?: number,
   pingServerUrl?: string,
+  pingServerMethod?: string,
   withExtraHeadRequest?: boolean,
   checkConnectionInterval?: number,
 };
@@ -29,6 +30,7 @@ const withNetworkConnectivity = (
     withRedux = false,
     timeout = 3000,
     pingServerUrl = 'https://google.com',
+    pingServerMethod = 'HEAD',
     withExtraHeadRequest = true,
     checkConnectionInterval = 0,
   }: Arguments = {},
@@ -41,6 +43,9 @@ const withNetworkConnectivity = (
   }
   if (typeof pingServerUrl !== 'string') {
     throw new Error('you should pass a string as pingServerUrl parameter');
+  }
+  if (typeof pingServerMethod !== 'string') {
+    throw new Error('you should pass a string as pingServerMethod parameter');
   }
 
   class EnhancedComponent extends Component<void, void, State> {
@@ -100,10 +105,11 @@ const withNetworkConnectivity = (
     };
 
     checkInternet = () => {
-      checkInternetAccess(
+      checkInternetAccess({
         timeout,
-        pingServerUrl,
-      ).then((hasInternetAccess: boolean) => {
+        url: pingServerUrl,
+        method: pingServerMethod,
+      }).then((hasInternetAccess: boolean) => {
         this.handleConnectivityChange(hasInternetAccess);
       });
     };
