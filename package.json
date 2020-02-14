@@ -61,6 +61,7 @@
     "redux-thunk": "^2.2.0"
   },
   "dependencies": {
+    "@react-native-community/netinfo": "^5.5.0",
     "hoist-non-react-statics": "^1.2.0",
     "lodash": "^4.17.4",
     "redux-saga": "^0.16.0"

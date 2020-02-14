@@ -2,7 +2,8 @@
 
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { NetInfo, Platform } from 'react-native';
+import { Platform } from 'react-native';
+import NetInfo from "@react-native-community/netinfo";
 import hoistStatics from 'hoist-non-react-statics';
 import { connectionChange } from './actionCreators';
 import reactConnectionStore from './reactConnectionStore';
@@ -23,6 +24,7 @@ type Arguments = {
 
 type State = {
   isConnected: boolean,
+  unsubscribeNetInfoListener: void
 };
 
 const withNetworkConnectivity = (
@@ -59,25 +61,31 @@ const withNetworkConnectivity = (
 
     state = {
       isConnected: reactConnectionStore.getConnection(),
+      unsubscribeNetInfoListener: () => {}
     };
 
     componentDidMount() {
-      NetInfo.isConnected.addEventListener(
-        'connectionChange',
-        withExtraHeadRequest
-          ? this.handleNetInfoChange
-          : this.handleConnectivityChange,
-      );
-
+      const unsubscribeNetInfoListener = NetInfo.addEventListener(state => {
+        if (withExtraHeadRequest){
+          this.handleNetInfoChange(state.isConnected); 
+        } else {
+          this.handleConnectivityChange(state.isConnected);
+        }
+      });
       // On Android the listener does not fire on startup
       if (Platform.OS === 'android') {
-        NetInfo.isConnected
-          .fetch()
-          .then(
-            withExtraHeadRequest
-              ? this.handleNetInfoChange
-              : this.handleConnectivityChange,
-          );
+        NetInfo.fetch().then(state => {
+          if (withExtraHeadRequest) {
+            this.handleNetInfoChange(state.isConnected);
+          } else {
+            this.handleConnectivityChange(state.isConnected);
+          }
+        });
+
+        this.setState({
+          ...this.state,
+          unsubscribeNetInfoListener
+        })
       }
 
       setupConnectivityCheckInterval(
@@ -87,12 +95,8 @@ const withNetworkConnectivity = (
     }
 
     componentWillUnmount() {
-      NetInfo.isConnected.removeEventListener(
-        'connectionChange',
-        withExtraHeadRequest
-          ? this.handleNetInfoChange
-          : this.handleConnectivityChange,
-      );
+      this.state.unsubscribeNetInfoListener();
+      
       clearConnectivityCheckInterval();
     }
 

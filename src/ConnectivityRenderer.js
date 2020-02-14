@@ -2,7 +2,8 @@
 
 import { Component } from 'react';
 import PropTypes from 'prop-types';
-import { NetInfo, Platform } from 'react-native';
+import { Platform } from 'react-native';
+import NetInfo from "@react-native-community/netinfo";
 import checkInternetAccess from './checkInternetAccess';
 import reactConnectionStore from './reactConnectionStore';
 
@@ -19,6 +20,7 @@ type Props = DefaultProps & {
 
 type State = {
   isConnected: boolean,
+  unsubscribeNetInfoListener: void,
 };
 
 class ConnectivityRenderer extends Component<DefaultProps, Props, State> {
@@ -39,6 +41,7 @@ class ConnectivityRenderer extends Component<DefaultProps, Props, State> {
 
   state = {
     isConnected: reactConnectionStore.getConnection(),
+    unsubscribeNetInfoListener: () => {},
   };
 
   componentWillMount() {
@@ -57,31 +60,32 @@ class ConnectivityRenderer extends Component<DefaultProps, Props, State> {
   }
 
   componentDidMount() {
-    NetInfo.isConnected.addEventListener(
-      'connectionChange',
-      this.props.withExtraHeadRequest
-        ? this.checkInternet
-        : this.handleConnectivityChange,
-    );
+    const unsubscribeNetInfoListener = NetInfo.addEventListener(state => {
+      if (this.props.withExtraHeadRequest){
+        this.checkInternet(state.isConnected); 
+      } else {
+        this.handleConnectivityChange(state.isConnected);
+      }
+    });
     // On Android the listener does not fire on startup
     if (Platform.OS === 'android') {
-      NetInfo.isConnected.fetch().then((isConnected: boolean) => {
+      NetInfo.fetch().then(state => {
         if (this.props.withExtraHeadRequest) {
-          this.checkInternet(isConnected);
+          this.checkInternet(state.isConnected);
         } else {
-          this.handleConnectivityChange(isConnected);
+          this.handleConnectivityChange(state.isConnected);
         }
       });
     }
+
+    this.setState({
+      ...this.state,
+      unsubscribeNetInfoListener
+    })
   }
 
   componentWillUnmount() {
-    NetInfo.isConnected.removeEventListener(
-      'connectionChange',
-      this.props.withExtraHeadRequest
-        ? this.checkInternet
-        : this.handleConnectivityChange,
-    );
+    this.state.unsubscribeNetInfoListener();
   }
 
   checkInternet = (isConnected: boolean) => {

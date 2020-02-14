@@ -2,7 +2,7 @@
 
 import { put, select, call, take, cancelled, fork } from 'redux-saga/effects';
 import { eventChannel } from 'redux-saga';
-import { NetInfo } from 'react-native';
+import NetInfo from "@react-native-community/netinfo";
 import checkInternetAccess from './checkInternetAccess';
 import { connectionChange } from './actionCreators';
 import type { NetworkState } from './types';
@@ -19,11 +19,9 @@ type Arguments = {
  * @returns {Channel<T>}
  */
 function createNetInfoConnectionChangeChannel() {
-  return eventChannel((emit: (param: boolean) => mixed) => {
-    NetInfo.isConnected.addEventListener('connectionChange', emit);
-    return () => {
-      NetInfo.isConnected.removeEventListener('connectionChange', emit);
-    };
+  return eventChannel((emit: (param: mixed) => mixed) => {
+    unsubscribeNetInfoListener = NetInfo.addEventListener(emit);
+    return unsubscribeNetInfoListener;
   });
 }
 
@@ -58,11 +56,11 @@ function* netInfoChangeSaga(
   const chan = yield call(createNetInfoConnectionChangeChannel);
   try {
     while (true) {
-      const isConnected = yield take(chan);
-      if (withExtraHeadRequest && isConnected) {
+      const netInfoState = yield take(chan);
+      if (withExtraHeadRequest && netInfoState.isConnected) {
         yield fork(checkInternetAccessSaga, timeout, pingServerUrl);
       } else {
-        yield fork(handleConnectivityChange, isConnected);
+        yield fork(handleConnectivityChange, netInfoState.isConnected);
       }
     }
   } finally {
